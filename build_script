@@ -1,0 +1,30 @@
+CURRENT = $(shell uname -r)
+
+KDIR = /lib/modules/$(CURRENT)/build
+PWD = $(shell pwd)
+PLATFORM=
+COMPILER=
+
+default:
+ifeq "$(PLATFORM)" ""
+	make -C $(KDIR) SUBDIRS=$(PWD) modules
+else	
+	make -C $(KDIR) SUBDIRS=$(PWD) ARCH=$(PLATFORM) CROSS_COMPILE=$(COMPILER) modules
+endif	
+	-rm -f *.o .*.cmd .*.flags *.mod.c
+
+cmd9500: cmd9500.c ioctl_9500.h
+	$(COMPILER)gcc -I$(KDIR)/include -o cmd9500 cmd9500.c
+	$(COMPILER)strip cmd9500
+	
+clean:
+	-rm -f *.o *.ko .*.cmd .*.flags *.mod.c cmd9500
+
+-include $(KDIR)/Rules.make
+
+
+
+
+
+
+

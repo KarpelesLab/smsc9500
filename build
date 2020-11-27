@@ -1,0 +1,11 @@
+#! /bin/sh
+
+make -f build_script clean
+make -f build_script TARGET=smscusbnet 
+make -f build_script TARGET=smsc9500
+make -f build_script cmd9500
+
+
+
+
+
