@@ -7,9 +7,9 @@ COMPILER=
 
 default:
 ifeq "$(PLATFORM)" ""
-	make -C $(KDIR) SUBDIRS=$(PWD) modules
+	make -C $(KDIR) M=$(PWD) modules
 else	
-	make -C $(KDIR) SUBDIRS=$(PWD) ARCH=$(PLATFORM) CROSS_COMPILE=$(COMPILER) modules
+	make -C $(KDIR) M=$(PWD) ARCH=$(PLATFORM) CROSS_COMPILE=$(COMPILER) modules
 endif	
 	-rm -f *.o .*.cmd .*.flags *.mod.c
 
