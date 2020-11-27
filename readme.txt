@@ -1,6 +1,6 @@
 ﻿========================================================================================================== 
 Linux Device driver for Microchip LAN95xx Family USB 2.0 to Ethernet Controller and USB Hub with Ethernet
-Version: 1.02.05
+Version: 1.02.06
 ========================================================================================================== 
  
 Contents: 
@@ -19,7 +19,7 @@ Contents:
 ------------------------------------------ 
  
     - x86/x64 bit PC 
-    - kernel up to 4.9.x
+    - kernel up to 5.4.x (and maybe more)
  
 2. Device support 
 ----------------- 
@@ -60,6 +60,8 @@ This release supports:
  
 5.  Release history 
 -------------------
+    V1.02.06 (11/28/2020)
+        - Fixed timers and other things to comply with recent kernel format
     V1.02.05 (03/19/2018)
 	- Fixed bug that can potentialy lead to a recursive locking when calling usb_unlink_urb from unlink_urb.
 	- External PHY sestting instructions added in the readme.txt.
