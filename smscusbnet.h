@@ -247,7 +247,7 @@ struct driver_info {
  */
 extern int smscusbnet_probe(struct usb_interface *, const struct usb_device_id *);
 extern void smscusbnet_disconnect(struct usb_interface *);
-extern void smscusbnet_linkpolling(unsigned long ptr);
+extern void smscusbnet_linkpolling(struct timer_list *t);
 
 /* Drivers that reuse some of the standard USB CDC infrastructure
  * (notably, using multiple interfaces according to the the CDC

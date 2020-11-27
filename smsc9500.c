@@ -2632,8 +2632,11 @@ static int smsc9500_get_sset_count(struct net_device *netdev, int sset)
    own structure so we don't interfere with other usbnet
    devices that may be connected at the same time. */
 static struct ethtool_ops smsc9500_ethtool_ops = {
+/*
+	// should use instead [gs]et_link_ksettings 
 	.get_settings		= smsc9500_get_settings,
 	.set_settings		= smsc9500_set_settings,
+*/
 	.get_drvinfo		= smsc9500_get_drvinfo,
 	.get_regs_len		= smsc9500_regs_len,
 	.get_regs		= smsc9500_get_regs,
@@ -3750,7 +3753,7 @@ static struct sk_buff *smsc9500_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 #endif
 
 					TxCommandA = ((((unsigned long)(frag_addr))&0x03UL)<<16) | //alignment adjustment
-			 			 ((u32)(frag->size));
+			 			 ((u32)(skb_frag_size(frag)));
 
 					if (i == (skbFragCnt-1)) {
 						TxCommandA |= TX_CMD_A_LAST_SEG_ ;
@@ -3763,7 +3766,7 @@ static struct sk_buff *smsc9500_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 					prt = prt + STATUS_WORD_LEN;
 					memcpy(prt, &TxCommandB, STATUS_WORD_LEN);
 					prt = prt + STATUS_WORD_LEN;
-					CopySize = ((((unsigned long)(frag->size)) + 3 + 
+					CopySize = ((((unsigned long)(skb_frag_size(frag))) + 3 + 
 							(((unsigned long)(frag_addr))&0x03UL)) >> 2) * 4;
 					memcpy(prt, (u32 *)(((unsigned long)(frag_addr)) & 0xFFFFFFFCUL), CopySize);
 					prt = prt+CopySize;
@@ -3813,7 +3816,7 @@ static struct sk_buff *smsc9500_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 					void *frag_addr = (void *)skb_frag_address(frag);
 #endif
 					TxCommandA = ((((unsigned long)(frag_addr))&0x03UL)<<16) | //u32 alignment adjustment
-							 ((u32)(frag->size));
+							 ((u32)(skb_frag_size(frag)));
 
 					if (i == (skbFragCnt - 1)) {
 						TxCommandA |= TX_CMD_A_LAST_SEG_ ;
@@ -3827,7 +3830,7 @@ static struct sk_buff *smsc9500_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 					memcpy(prt, &TxCommandB, STATUS_WORD_LEN);
 					prt = prt + STATUS_WORD_LEN;
 
-					CopySize = ((((unsigned long)(frag->size)) + 3 + 
+					CopySize = ((((unsigned long)(skb_frag_size(frag))) + 3 + 
 							(((unsigned long)(frag_addr)) & 0x03UL)) >> 2) * 4;
 					memcpy(prt, (void *)(((unsigned long)(frag_addr)) & 0xFFFFFFFCUL), CopySize);
 					prt = prt+CopySize;
@@ -5652,10 +5655,8 @@ static int Smsc9500SystemResume(struct usb_interface *intf)
 
 	Tx_WakeQueue(dev,0x04UL);
 
-	init_timer(&(dev->LinkPollingTimer));
 	dev->StopLinkPolling = FALSE;
-	dev->LinkPollingTimer.function = smscusbnet_linkpolling;
-	dev->LinkPollingTimer.data = (unsigned long) dev;
+	timer_setup(&(dev->LinkPollingTimer), smscusbnet_linkpolling, 0);
 	dev->LinkPollingTimer.expires = jiffies+HZ;
 	add_timer(&(dev->LinkPollingTimer));
 	tasklet_schedule (&dev->bh);
@@ -5702,10 +5703,8 @@ static int smsc9500_device_recovery(struct usbnet *dev)
 
 		Tx_WakeQueue(dev,0x04UL);
 
-		init_timer(&(dev->LinkPollingTimer));
 		dev->StopLinkPolling = FALSE;
-		dev->LinkPollingTimer.function = smscusbnet_linkpolling;
-		dev->LinkPollingTimer.data = (unsigned long) dev;
+		timer_setup(&(dev->LinkPollingTimer), smscusbnet_linkpolling, 0);
 		dev->LinkPollingTimer.expires = jiffies+HZ;
 		add_timer(&(dev->LinkPollingTimer));
 

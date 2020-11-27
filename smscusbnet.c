@@ -507,9 +507,9 @@ void smscusbnet_defer_myevent (struct usbnet *dev, int work)
 		//devdbg (dev,"myevent %d scheduled", work);
 }
 
-void smscusbnet_linkpolling(unsigned long ptr)
+void smscusbnet_linkpolling(struct timer_list *t)
 {
-	struct usbnet * dev = (struct usbnet *) ptr;
+	struct usbnet * dev = from_timer(dev, t, LinkPollingTimer);
 
 	if (dev == NULL)
 		return;	
@@ -886,14 +886,24 @@ static void smscusbnet_free_tx_buffer(struct usbnet *dev, struct sk_buff *skb)
 	}
 }
 
+static void  smscusbnet_std(struct usbnet *dev);
+
+static void  smscusbnet_bh(unsigned long param) {
+	smscusbnet_std((struct usbnet *)param);
+}
+
+static void  smscusbnet_timer(struct timer_list *t) {
+	struct usbnet *dev = from_timer(dev, t, delay);
+	smscusbnet_std(dev);
+}
+
 /* tasklet (work deferred from completions, in_irq) or timer */
-static void  smscusbnet_bh(unsigned long param)
+static void  smscusbnet_std(struct usbnet *dev)
 {
 	int ret = 0;
 	unsigned long flags;
 	struct sk_buff *skb = NULL;
 	struct skb_data *entry = NULL;
-	struct usbnet *dev = (struct usbnet *) param;
 
 	if (dev == NULL) 
 		return;
@@ -1288,7 +1298,7 @@ static void myevent(struct work_struct *work)
 			){
 			if((dev->idleCount >= PM_IDLE_DELAY) && 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,31))
-				(atomic_read(&dev->uintf->pm_usage_cnt) > 0)){
+				(atomic_read(&dev->uintf->dev.power.usage_count) > 0)){
 #else
 				(dev->uintf->pm_usage_cnt > 0)){
 #endif
@@ -1636,7 +1646,7 @@ int smscusbnet_start_xmit (struct sk_buff *skb, struct net_device *net)
 
 #if defined(CONFIG_PM)
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,31))
-	if (atomic_read(&dev->uintf->pm_usage_cnt) <= 0) {
+	if (atomic_read(&dev->uintf->dev.power.usage_count) <= 0) {
 #else
 	if(dev->uintf->pm_usage_cnt <= 0) {
 #endif
@@ -1889,9 +1899,7 @@ smscusbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 #else
 	INIT_WORK (&dev->myevent, myevent);
 #endif
-	dev->delay.function = smscusbnet_bh;
-	dev->delay.data = (unsigned long) dev;
-	init_timer (&dev->delay);
+	timer_setup (&dev->delay, smscusbnet_timer, 0);
 
 	dev->tx_qlen = tx_queue_size;
 	dev->rx_qlen = rx_queue_size;
@@ -1942,9 +1950,7 @@ smscusbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	}
 
 	dev->StopLinkPolling = FALSE;
-	dev->LinkPollingTimer.function = smscusbnet_linkpolling;
-	dev->LinkPollingTimer.data = (unsigned long) dev;
-	init_timer(&(dev->LinkPollingTimer));
+	timer_setup(&(dev->LinkPollingTimer), smscusbnet_linkpolling, 0);
 
 	dev->net = net;
 	strcpy (net->name, "usb%d");
